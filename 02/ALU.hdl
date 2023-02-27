@@ -58,8 +58,11 @@ CHIP ALU {
 
         //No 
         Not16(in=xyF, out=xyFN);
-        Mux16(a=xyF, b=xyFN, sel=no, out=out);
-
+        Mux16(a=xyF, b=xyFN, sel=no, out=out, out[15]=ng, out[0..7]=zrLow, out[8..15]=zrHigh);
+        
         // zr if out and == 0 
-        // ng if most significant bit is one 
+        Or8Way(in=zrLow, out=zrRight);
+        Or8Way(in=zrHigh, out=zrLeft);
+        Or(a=zrRight, b=zrLeft, out=isZero);
+        Not(in=isZero, out=zr);
 }
