@@ -9,41 +9,52 @@
 
 // Should check if the screen is full if is 
 //      go back to starting point and make 0 while incrementing pointer
+
+// Instead of making whole screen black 
+// it creates line with spaces 
+
+@SCREEN 
+D=A
+@addr 
+M=D
 (LOOP)
-    @0 
-        D=M 
-    @n 
-        M=D
-    // addr 
-    @SCREEN 
-        D=A 
-    @addr 
-        M=D
-    //
     @KBD 
         D=M 
     @WHITE 
         D;JEQ
+    @BLACK 
+        D;JGT
+
     (BLACK)
-        @n 
-            D=M
-        @addr
-            A=M+D
-            M=-1 
-        @1 
-            D=A 
-        @n 
-            M=M+D
-            D=M
-        @24575
-            D=D-M 
-        @BLACK 
-            D;JGT
-        @LOOP 
-            D;JEQ
-    (WHITE) 
-        @SCREEN 
-            M=0 
-        @BLACK 
+        @addr 
+            A=M 
+            M=1 
+        @INCREMENTADDR 
             0;JMP
 
+    (WHITE) 
+        @addr
+            A=M
+            M=0 
+        @INCREMENTADDR 
+            0;JMP
+
+    (RESETADDRESS)
+        @SCREEN 
+            D=A 
+        @addr 
+            M=D
+        @LOOP 
+            0;JMP
+
+    (INCREMENTADDR)
+        @addr 
+            D=M
+        @24575 
+            D=A-D 
+        @RESETADDRESS 
+            D;JEQ 
+        @addr 
+            M=M+1
+        @LOOP 
+            0;JMP
