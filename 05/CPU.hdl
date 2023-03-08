@@ -21,7 +21,7 @@
  * instruction. The addressM and pc outputs are clocked: although they 
  * are affected by the execution of the current instruction, they commit 
  * to their new values only in the next time step. If reset==1 then the 
- * CPU jumps to address 0 (i.e. pc is set to 0 in next time step) rather 
+ * CPU jumps to address 0 (i.e. pc is sel to 0 in next time step) rather 
  * than to the address resulting from executing the current instruction. 
  */
 
@@ -39,5 +39,42 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    Mux16(a=false, 
+          b=instruction, 
+          sel=instruction[15], 
+          out[0]=cJGT, out[1]=cJEQ, out[2]=cJLT, 
+          out[3]=writeM, out[3]=cDestM, out[4]=cDestD, out[5]=cDestA, 
+          out[6]=cALUNo, out[7]=cALUF, out[8]=cALUNy, out[9]=cALUZy,
+          out[10]=cALUNx, out[11]=cALUZx, out[12]=cAOrM, out[15]=cType);
+
+    ALU(x=xIn, y=yIn, 
+        zx=cALUZx, nx=cALUNx, zy=cALUZy, 
+        ny=cALUNy, f=cALUF, no=cALUNo, 
+        out=outM, out=ALUout, zr=zero, ng=neg);
+
+    // Instruction Part (A)
+    Mux16(a=instruction, b=ALUout, sel=cType, out=aMuxOut); 
+    Mux16(a=ARout, b=inM, sel=cAOrM, out=yIn); 
+
+    Not(in=cType, out=ncType);
+    Or(a=ncType, b=cDestA, out=loadA);
+    // A register 
+    ARegister(in=aMuxOut, load=loadA, out=ARout, out[0..14]=addressM);
+
+    // D Register
+    DRegister(in=ALUout, load=cDestD, out=xIn);
+
+    // Jump 
+    Or(a=zero, b=neg, out=lTEQ);
+    Not(in=lTEQ, out=pos);
+    
+    And(a=cJEQ, b=zero, out=JEQ);
+    And(a=cJLT, b=neg, out=JLT);
+    And(a=cJGT, b=pos, out=JGT);
+
+    Or(a=JEQ, b=JLT, out=JLE);
+    Or(a=JLE, b=JGT, out=jump);
+
+    PC(in=ARout, load=jump, inc=true, reset=reset, out[0..14]=pc, out[15]=false);
+
 }
